@@ -3,6 +3,7 @@ from models.user import Admin, db, Permission_a
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import jwt
+from services.utils import is_valid_password
 
 bcrypt = Bcrypt()
 
@@ -35,16 +36,17 @@ def register_admin():
     if password != confirm_password:
         return {'message': 'Passwords do not match'}
 
-        # Sprawdź, czy istnieje użytkownik o takiej nazwie użytkownika lub adresie email
-        user = Admin.query.filter_by(email=email).first()
-        if user:
-            return {'message': 'Username or email already exists'}
+    if not is_valid_password(password):
+        return {'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
+
+    user = Admin.query.filter_by(email=email).first()
+    if user:
+        return {'message': 'Username or email already exists'}
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     new_user = Admin(username=username, email=email, password=hashed_password)
 
     try:
-        # Zapisz nowego użytkownika do bazy danych
         db.session.add(new_user)
         db.session.commit()
         return {'message': 'User registered successfully'}
@@ -52,23 +54,18 @@ def register_admin():
         return {'message': 'An error occurred while registering user'}
 
 def get_admin_perms(adminId):
-    # Wyszukaj admina o podanym ID
     admin = Admin.query.get(adminId)
 
     if admin:
-        # Pobierz uprawnienia admina
         permissions = [permission.description_short for permission in admin.permissions]
         return jsonify({'permissions': permissions})
     else:
-        # Jeśli admin o podanym ID nie istnieje, zwróć odpowiedni komunikat
         return jsonify({'message': 'Admin not found'}), 404
 
 
 def get_all_perms():
-    # Pobierz wszystkie rekordy z tabeli Permission_a
     permissions = Permission_a.query.all()
 
-    # Przygotuj dane JSON z listą uprawnień
     data = {
         'permissions': [
             {
@@ -82,3 +79,42 @@ def get_all_perms():
     }
 
     return jsonify(data)
+
+
+def add_perm(adminId,permissionId):
+    try:
+        admin = Admin.query.get(adminId)
+        if not admin:
+            return jsonify({'message': 'Admin not found'}), 404
+
+        permission = Permission_a.query.get(permissionId)
+        if not permission:
+            return jsonify({'message': 'Permission not found'}), 404
+
+        admin.permissions.append(permission)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Permission added to admin successfully'})
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while adding permission'}), 500
+def del_perm(adminId,permissionId):
+    try:
+        admin = Admin.query.get(adminId)
+        if not admin:
+            return jsonify({'message': 'Admin not found'}), 404
+
+        permission = Permission_a.query.get(permissionId)
+        if not permission:
+            return jsonify({'message': 'Permission not found'}), 404
+
+        if permission.admin_id != admin.id:
+            return jsonify({'message': 'Permission is not associated with this admin'}), 400
+
+        admin.permissions.remove(permission)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Permission removed from admin successfully'})
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while removing permission'}), 500
