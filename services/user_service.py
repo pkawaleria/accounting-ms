@@ -4,6 +4,7 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import jwt
 from services.utils import is_valid_password
+from flask_dance.contrib.google import google
 
 bcrypt = Bcrypt()
 def login_user():
@@ -58,3 +59,25 @@ def delete_user(userId):
             return {'message': 'An error occurred while deleting user'}, 500
     else:
         return {'message': 'User not found'}, 404
+
+def google_login():
+    if not google.authorized:
+        return jsonify({'message': 'Not authorized'}), 401
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        return jsonify({'message': 'Failed to fetch user info from Google'}), 500
+
+    user_info = resp.json()
+    email = user_info.get('email')
+    # Sprawdź, czy użytkownik o podanym emailu już istnieje w bazie danych
+    user = User.query.filter_by(email=email).first()
+    if user:
+        return jsonify({'message': 'User with this email already exists'}), 400
+
+    # Utwórz nowego użytkownika na podstawie danych z Google
+    new_user = User(username=user_info.get('name'), email=email)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'User registered successfully'}), 200
