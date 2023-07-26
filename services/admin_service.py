@@ -118,3 +118,33 @@ def del_perm(adminId,permissionId):
         return jsonify({'message': 'Permission removed from admin successfully'})
     except Exception as e:
         return jsonify({'message': 'An error occurred while removing permission'}), 500
+
+def init_perms():
+    if Permission_a.query.count() == 0:
+        permissions = [
+            Permission_a(code="ADM001", description_short="Usuwanie ogłoszeń",
+                         description_long="Usuwanie dowolnych ogłoszeń z portalu"),
+            Permission_a(code="ADM002", description_short="Akceptacja ogłoszeń",
+                         description_long="Akceptowanie ogłoszeń oczekujących w kolejce"),
+            Permission_a(code="ADM003", description_short="Nadawanie uprawnień",
+                         description_long="Nadawanie uprawnień innym administratorom"),
+            Permission_a(code="ADM004", description_short="Zarządzanie użytkownikami",
+                         description_long="Zarządzanie użytkownikami na portalu"),
+            Permission_a(code="ADM005", description_short="Zarządzanie ogłoszeniami",
+                         description_long="Zarządzanie ogłoszeniami na portalu"),
+            Permission_a(code="ADM006", description_short="Dodawanie kategorii",
+                         description_long="Dodawanie nowych kategorii dla ogłoszeń"),
+            Permission_a(code="ADM007", description_short="Edycja ogłoszeń",
+                         description_long="Edycja istniejących ogłoszeń na portalu"),
+            Permission_a(code="ADM008", description_short="Blokowanie użytkowników",
+                         description_long="Blokowanie kont użytkowników"),
+            Permission_a(code="ADM009", description_short="Edycja kategorii",
+                         description_long="Edycja istniejących kategorii dla ogłoszeń"),
+        ]
+        for permission in permissions:
+            db.session.add(permission)
+
+        db.session.commit()
+        return jsonify({'message': 'Permissions initialized successfuly'}), 201
+    else:
+        return jsonify({'message': 'Permissions_a is not empty'}), 500

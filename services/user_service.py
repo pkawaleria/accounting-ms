@@ -60,24 +60,51 @@ def delete_user(userId):
     else:
         return {'message': 'User not found'}, 404
 
-def google_login():
-    if not google.authorized:
-        return jsonify({'message': 'Not authorized'}), 401
+def change_password():
+    authorization_header = request.headers.get('Authorization')
+    if authorization_header:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, "secret", algorithms=['HS256'])
+        email = decoded_token.get('email')
+    else:
+        return jsonify({'message': 'Authorization header missing'}), 401
+    current_user_email = email
+    user = User.query.filter_by(email=current_user_email).first()
+    if request.method == 'POST':
+        if user:
+            new_password = request.json.get('new_password')
+            if new_password:
+                user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                db.session.commit()
+                return jsonify({'message': 'Password changed successfully'}), 200
+            else:
+                return jsonify({'message': 'New password not provided'}), 400
+        else:
+            return jsonify({'message': 'User not found'}), 404
 
-    resp = google.get("/oauth2/v2/userinfo")
-    if not resp.ok:
-        return jsonify({'message': 'Failed to fetch user info from Google'}), 500
+def acc():
+    authorization_header = request.headers.get('Authorization')
+    if authorization_header:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, "secret", algorithms=['HS256'])
+        email = decoded_token.get('email')
+    else:
+        return jsonify({'message': 'Authorization header missing'}), 401
+    current_user_email = email
+    user = User.query.filter_by(email=current_user_email).first()
 
-    user_info = resp.json()
-    email = user_info.get('email')
-    # Sprawdź, czy użytkownik o podanym emailu już istnieje w bazie danych
-    user = User.query.filter_by(email=email).first()
-    if user:
-        return jsonify({'message': 'User with this email already exists'}), 400
-
-    # Utwórz nowego użytkownika na podstawie danych z Google
-    new_user = User(username=user_info.get('name'), email=email)
-    db.session.add(new_user)
-    db.session.commit()
-
-    return jsonify({'message': 'User registered successfully'}), 200
+    if request.method == 'GET':
+        return jsonify({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+        })
+    elif request.method == 'POST':
+        user.username = request.json.get('username')
+        user.email = request.json.get('email')
+        db.session.commit()
+        token = jwt.encode(
+            {'email': request.json.get('email'), 'exp': datetime.utcnow() + timedelta(minutes=30)},
+            "secret"
+        )
+        return jsonify({"accessToken": token})
