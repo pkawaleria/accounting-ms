@@ -15,10 +15,14 @@ def login_user():
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid credentials'}), 401
 
-    token = jwt.encode(
-        {'email': email, 'exp': datetime.utcnow() + timedelta(minutes=3000000000)},
-        "secret"
-    )
+    token_data = {
+        'email': email,
+        'user_id': user.id,  # Dołączamy ID użytkownika do tokenu
+        'exp': datetime.utcnow() + timedelta(minutes=3000000000)
+    }
+
+    # Generujemy token JWT
+    token = jwt.encode(token_data, "secret", algorithm='HS256')
     return jsonify({'access_token': token}), 200
 
 
