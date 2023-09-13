@@ -3,7 +3,7 @@ from models.user import User, db
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import jwt
-from services.utils import is_valid_password
+from services.utils import is_valid_password, is_valid_phone_number
 from flask_dance.contrib.google import google
 
 bcrypt = Bcrypt()
@@ -17,7 +17,7 @@ def login_user():
 
     token_data = {
         'email': email,
-        'user_id': user.id,  # Dołączamy ID użytkownika do tokenu
+        'user_id': user.id,
         'exp': datetime.utcnow() + timedelta(minutes=3000000000)
     }
 
@@ -30,19 +30,25 @@ def register_user():
     username = request.json.get('username')
     email = request.json.get('email')
     password = request.json.get('password')
+    firstname = request.json.get('firstname')
+    lastname = request.json.get('lastname')
+    phone_number = request.json.get('phone_number')
     confirm_password = request.json.get('confirmPassword')
     if password != confirm_password:
         return {'message': 'Passwords do not match'}
 
     if not is_valid_password(password):
         return {'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
+    if not is_valid_phone_number(phone_number):
+        return {'message': 'Phone number must be exactly 9 digits'}, 400
 
     user = User.query.filter_by(email=email).first()
     if user:
         return {'message': 'Username or email already exists'}
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, email=email, password=hashed_password)
+    new_user = User(username=username, firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
+                    password=hashed_password)
 
     try:
         db.session.add(new_user)
