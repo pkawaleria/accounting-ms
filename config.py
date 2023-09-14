@@ -12,11 +12,10 @@ DEBUG = True
 
 DB_USER = 'root'
 DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'password'
-# DB_HOST = '192.168.100.131'
 DB_HOST = 'localhost'
 DB_NAME = 'users'
 
-SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
+SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{DB_PASSWORD}@db/{DB_NAME}'
 
 # Turn off the Flask-SQLAlchemy event system and warning
 SQLALCHEMY_TRACK_MODIFICATIONS = False
