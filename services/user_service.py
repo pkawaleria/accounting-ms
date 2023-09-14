@@ -5,8 +5,10 @@ from datetime import datetime, timedelta
 import jwt
 from services.utils import is_valid_password, is_valid_phone_number
 from flask_dance.contrib.google import google
+from flask_cors import cross_origin
 
 bcrypt = Bcrypt()
+@cross_origin()
 def login_user():
     email = request.json.get('email')
     password = request.json.get('password')
@@ -25,15 +27,15 @@ def login_user():
     token = jwt.encode(token_data, "secret", algorithm='HS256')
     return jsonify({'access_token': token}), 200
 
-
+@cross_origin()
 def register_user():
     username = request.json.get('username')
     email = request.json.get('email')
     password = request.json.get('password')
+    confirm_password = request.json.get('confirmPassword')
     firstname = request.json.get('firstname')
     lastname = request.json.get('lastname')
     phone_number = request.json.get('phone_number')
-    confirm_password = request.json.get('confirmPassword')
     if password != confirm_password:
         return {'message': 'Passwords do not match'}
 
@@ -53,9 +55,9 @@ def register_user():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return {'message': 'User registered successfully'}
+        return {'message': 'User registered successfully'}, 200
     except Exception as e:
-        return {'message': 'An error occurred while registering user'}
+        return {'message': 'An error occurred while registering user'}, 500
 
 def delete_user(userId):
     user = User.query.filter_by(id=userId).first()

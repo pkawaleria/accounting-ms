@@ -15,6 +15,8 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'password'
 DB_HOST = 'localhost'
 DB_NAME = 'users'
 
+
+# SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@localhost/inz'
 SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{DB_PASSWORD}@db/{DB_NAME}'
 
 # Turn off the Flask-SQLAlchemy event system and warning
