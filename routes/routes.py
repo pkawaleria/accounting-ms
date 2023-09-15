@@ -11,7 +11,7 @@ user.route('/login', methods=['POST'])(login)
 user.route('/register', methods=['POST'])(register)
 user.route('/<string:userId>/delete', methods=['DELETE'])(delete_user)
 user.route('/changepasswd', methods=['POST'])(change_passwd)
-user.route('/account_info', methods=['POST,', 'GET'])(account)
+user.route('/account_info', methods=['POST', 'GET'])(account)
 
 admin.route('/login', methods=['POST'])(login_a)
 admin.route('/register', methods=['POST'])(register_a)

@@ -23,7 +23,6 @@ def login_user():
         'exp': datetime.utcnow() + timedelta(minutes=3000000000)
     }
 
-    # Generujemy token JWT
     token = jwt.encode(token_data, "secret", algorithm='HS256')
     return jsonify({'access_token': token}), 200
 
@@ -94,6 +93,7 @@ def change_password():
         else:
             return jsonify({'message': 'User not found'}), 404
 
+@cross_origin()
 def acc():
     authorization_header = request.headers.get('Authorization')
     if authorization_header:
@@ -110,13 +110,41 @@ def acc():
             'id': user.id,
             'username': user.username,
             'email': user.email,
+            'firstname': user.firstname,
+            'lastname': user.lastname,
+            'phone_number': user.phone_number
         })
     elif request.method == 'POST':
-        user.username = request.json.get('username')
-        user.email = request.json.get('email')
+        new_username = request.json.get('username')
+        new_email = request.json.get('email')
+        new_firstname = request.json.get('firstname')
+        new_lastname = request.json.get('lastname')
+        new_phone_number = request.json.get('phone_number')
+
+        existing_user_with_username = User.query.filter_by(username=new_username).first()
+        existing_user_with_email = User.query.filter_by(email=new_email).first()
+        existing_user_with_phone = User.query.filter_by(phone_number=new_phone_number).first()
+
+        if existing_user_with_username and existing_user_with_username.id != user.id:
+            return jsonify({'message': 'User with the same username already exists'}), 400
+        if existing_user_with_email and existing_user_with_email.id != user.id:
+            return jsonify({'message': 'User with the same email already exists'}), 400
+        if existing_user_with_phone and existing_user_with_phone.id != user.id:
+            return jsonify({'message': 'User with the same phone number already exists'}), 400
+
+        user.username = new_username
+        user.email = new_email
+        user.firstname = new_firstname
+        user.lastname = new_lastname
+        user.phone_number = new_phone_number
+
         db.session.commit()
-        token = jwt.encode(
-            {'email': request.json.get('email'), 'exp': datetime.utcnow() + timedelta(minutes=30)},
-            "secret"
-        )
-        return jsonify({"accessToken": token})
+
+        token_data = {
+            'email': email,
+            'user_id': user.id,
+            'exp': datetime.utcnow() + timedelta(minutes=3000000000)
+        }
+
+        token = jwt.encode(token_data, "secret", algorithm='HS256')
+        return jsonify({'access_token': token}), 200
