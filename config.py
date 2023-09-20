@@ -16,6 +16,8 @@ DB_HOST = 'db'
 DB_NAME = 'users'
 
 
+JWT_SECRET = 'LRFYY4iEwYOYmU5E9xL9hUOQKiAdlJ1234odfdacp213af2favma2rfav24favlacsaa3agvdaasdfataeg3qtqgter3qrt32tdgsadfgacdsbv34t32tr4afafawfasfasf'
+
 # SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@localhost/inz'
 SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{DB_PASSWORD}@db/{DB_NAME}'
 

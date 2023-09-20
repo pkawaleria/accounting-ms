@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from models.user import Admin, db, Permission_a
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
@@ -9,6 +9,8 @@ bcrypt = Bcrypt()
 
 
 def login_admin():
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')  # Access JWT_SECRET from current app's config
+
     email = request.json.get('email')
     password = request.json.get('password')
     permissions = []
@@ -21,10 +23,11 @@ def login_admin():
     payload = {
         'sub': user.id if user else None,
         'exp': datetime.utcnow() + timedelta(days=1),
+        'iat': datetime.utcnow(),
+        'role': 'ADMIN',
         'permissions': permissions
     }
-
-    token = jwt.encode(payload, "sekret", algorithm='HS256')
+    token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
     return jsonify({'access_token': token}), 200
 
 
