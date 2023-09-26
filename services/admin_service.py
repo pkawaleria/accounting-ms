@@ -4,10 +4,11 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import jwt
 from services.utils import is_valid_password, is_valid_phone_number
+from flask_cors import cross_origin
 
 bcrypt = Bcrypt()
 
-
+@cross_origin()
 def login_admin():
     jwt_signing_secret = current_app.config.get('JWT_SECRET')  # Access JWT_SECRET from current app's config
 
@@ -27,10 +28,11 @@ def login_admin():
         'role': 'ADMIN',
         'permissions': permissions
     }
+
     token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
     return jsonify({'access_token': token}), 200
 
-
+@cross_origin()
 def register_admin():
     username = request.json.get('username')
     email = request.json.get('email')

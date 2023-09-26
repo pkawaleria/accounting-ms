@@ -1,26 +1,21 @@
-from datetime import datetime, timedelta
-
-import jwt
 from flask import request, jsonify, current_app
+from models.user import User, db
 from flask_bcrypt import Bcrypt
+from datetime import datetime, timedelta
+import jwt
+from services.utils import is_valid_password, is_valid_phone_number
 from flask_cors import cross_origin
 
-from models.user import User, db
-from services.utils import is_valid_password, is_valid_phone_number
-
 bcrypt = Bcrypt()
-
-
 @cross_origin()
 def login_user():
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
     email = request.json.get('email')
     password = request.json.get('password')
 
     user = User.query.filter_by(email=email).first()
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid credentials'}), 401
-
-    jwt_signing_secret = current_app.config.get('JWT_SECRET')
 
     token_data = {
         'email': email,
@@ -30,10 +25,8 @@ def login_user():
         'exp': datetime.utcnow() + timedelta(minutes=60*24*30)
     }
 
-    # Generujemy token JWT
-    token = jwt.encode(token_data, "secret", algorithm='HS256')
+    token = jwt.encode(token_data, jwt_signing_secret, algorithm='HS256')
     return jsonify({'access_token': token}), 200
-
 
 @cross_origin()
 def register_user():
@@ -48,8 +41,7 @@ def register_user():
         return {'message': 'Passwords do not match'}
 
     if not is_valid_password(password):
-        return {
-            'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
+        return {'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
     if not is_valid_phone_number(phone_number):
         return {'message': 'Phone number must be exactly 9 digits'}, 400
 
@@ -68,7 +60,6 @@ def register_user():
     except Exception as e:
         return {'message': 'An error occurred while registering user'}, 500
 
-
 def delete_user(userId):
     user = User.query.filter_by(id=userId).first()
 
@@ -82,11 +73,10 @@ def delete_user(userId):
     else:
         return {'message': 'User not found'}, 404
 
-
+@cross_origin()
 def change_password():
-    authorization_header = request.headers.get('Authorization')
     jwt_signing_secret = current_app.config.get('JWT_SECRET')
-
+    authorization_header = request.headers.get('Authorization')
     if authorization_header:
         token = authorization_header.split(' ')[1]
         decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
@@ -107,10 +97,10 @@ def change_password():
         else:
             return jsonify({'message': 'User not found'}), 404
 
-
+@cross_origin()
 def acc():
-    authorization_header = request.headers.get('Authorization')
     jwt_signing_secret = current_app.config.get('JWT_SECRET')
+    authorization_header = request.headers.get('Authorization')
     if authorization_header:
         token = authorization_header.split(' ')[1]
         decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
@@ -160,7 +150,7 @@ def acc():
             'sub': user.id,
             'iat': datetime.utcnow(),
             'roles': 'USER',
-            'exp': datetime.utcnow() + timedelta(minutes=60*24*30)
+            'exp': datetime.utcnow() + timedelta(minutes=60 * 24 * 30)
         }
 
         token = jwt.encode(token_data, jwt_signing_secret, algorithm='HS256')
