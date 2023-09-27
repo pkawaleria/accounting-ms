@@ -37,12 +37,13 @@ def register_admin():
     username = request.json.get('username')
     email = request.json.get('email')
     password = request.json.get('password')
+    confirm_password = request.json.get('confirm_password')
     firstname = request.json.get('firstname')
     lastname = request.json.get('lastname')
     phone_number = request.json.get('phone_number')
-    confirm_password = request.json.get('confirmPassword')
+
     if password != confirm_password:
-        return {'message': 'Passwords do not match'}
+        return {'message': 'Passwords do not match'}, 400
 
     if not is_valid_password(password):
         return {'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
@@ -52,18 +53,19 @@ def register_admin():
 
     user = Admin.query.filter_by(email=email).first()
     if user:
-        return {'message': 'Username or email already exists'}
+        return {'message': 'Username or email already exists'}, 500
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = Admin(username=username,firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
+    new_user = Admin(username=username, firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
                      password=hashed_password)
 
     try:
         db.session.add(new_user)
         db.session.commit()
-        return {'message': 'User registered successfully'}
-    except Exception as e:
-        return {'message': 'An error occurred while registering user'}
+        return {'message': 'Admin registered successfully'}
+    except Exception:
+        return {'message': 'An error occurred while registering admin'}
+
 
 def get_admin_perms(adminId):
     admin = Admin.query.get(adminId)
@@ -110,6 +112,7 @@ def add_perm(adminId,permissionId):
         return jsonify({'message': 'Permission added to admin successfully'})
     except Exception as e:
         return jsonify({'message': 'An error occurred while adding permission'}), 500
+
 def del_perm(adminId,permissionId):
     try:
         admin = Admin.query.get(adminId)
@@ -128,8 +131,9 @@ def del_perm(adminId,permissionId):
         db.session.commit()
 
         return jsonify({'message': 'Permission removed from admin successfully'})
-    except Exception as e:
+    except Exception:
         return jsonify({'message': 'An error occurred while removing permission'}), 500
+
 
 def init_perms():
     if Permission_a.query.count() == 0:

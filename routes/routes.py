@@ -10,7 +10,7 @@ user.route('/', methods=['GET'])(index)
 user.route('/login', methods=['POST'])(login)
 user.route('/register', methods=['POST'])(register)
 user.route('/<string:userId>/delete', methods=['DELETE'])(delete_user)
-user.route('/changepasswd', methods=['POST'])(change_passwd)
+user.route('/change-password', methods=['POST'])(change_passwd)
 user.route('/account_info', methods=['POST', 'GET'])(account)
 
 admin.route('/login', methods=['POST'])(login_a)

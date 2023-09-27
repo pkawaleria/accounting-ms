@@ -7,6 +7,8 @@ from services.utils import is_valid_password, is_valid_phone_number
 from flask_cors import cross_origin
 
 bcrypt = Bcrypt()
+
+
 @cross_origin()
 def login_user():
     jwt_signing_secret = current_app.config.get('JWT_SECRET')
@@ -22,32 +24,35 @@ def login_user():
         'sub': user.id,
         'iat': datetime.utcnow(),
         'roles': 'USER',
-        'exp': datetime.utcnow() + timedelta(minutes=60*24*30)
+        'exp': datetime.utcnow() + timedelta(minutes=60 * 24 * 30)
     }
 
     token = jwt.encode(token_data, jwt_signing_secret, algorithm='HS256')
     return jsonify({'access_token': token}), 200
+
 
 @cross_origin()
 def register_user():
     username = request.json.get('username')
     email = request.json.get('email')
     password = request.json.get('password')
-    confirm_password = request.json.get('confirmPassword')
+    confirm_password = request.json.get('confirm_password')
     firstname = request.json.get('firstname')
     lastname = request.json.get('lastname')
     phone_number = request.json.get('phone_number')
+
     if password != confirm_password:
-        return {'message': 'Passwords do not match'}
+        return {'message': 'Passwords do not match'}, 400
 
     if not is_valid_password(password):
         return {'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
+
     if not is_valid_phone_number(phone_number):
         return {'message': 'Phone number must be exactly 9 digits'}, 400
 
     user = User.query.filter_by(email=email).first()
     if user:
-        return {'message': 'Username or email already exists'}
+        return {'message': 'Username or email already exists'}, 500
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     new_user = User(username=username, firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
@@ -57,8 +62,9 @@ def register_user():
         db.session.add(new_user)
         db.session.commit()
         return {'message': 'User registered successfully'}, 200
-    except Exception as e:
+    except Exception:
         return {'message': 'An error occurred while registering user'}, 500
+
 
 def delete_user(userId):
     user = User.query.filter_by(id=userId).first()
@@ -67,11 +73,12 @@ def delete_user(userId):
         try:
             db.session.delete(user)
             db.session.commit()
-            return {'message': 'User deleted successfully'}
-        except Exception as e:
+            return {'message': 'User deleted successfully'}, 200
+        except Exception:
             return {'message': 'An error occurred while deleting user'}, 500
     else:
         return {'message': 'User not found'}, 404
+
 
 @cross_origin()
 def change_password():
@@ -96,6 +103,7 @@ def change_password():
                 return jsonify({'message': 'New password not provided'}), 400
         else:
             return jsonify({'message': 'User not found'}), 404
+
 
 @cross_origin()
 def acc():
