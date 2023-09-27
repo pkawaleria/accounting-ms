@@ -25,7 +25,7 @@ def login_admin():
         'sub': user.id if user else None,
         'exp': datetime.utcnow() + timedelta(days=1),
         'iat': datetime.utcnow(),
-        'role': 'ADMIN',
+        'roles': 'ADMIN',
         'permissions': permissions
     }
 
