@@ -19,7 +19,7 @@ def login_admin():
     user = Admin.query.filter_by(email=email).first()
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid credentials'}), 401
-    permissions = user.get_permissions()
+    permissions = [permission.code for permission in user.permissions]
 
     payload = {
         'email': user.email,
