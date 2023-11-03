@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
+
 db = SQLAlchemy()
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -16,6 +18,7 @@ class User(db.Model):
     def __repr__(self):
         return '<userid %r>' % self.id
 
+
 class Permission_u(db.Model):
     __tablename__ = 'permissions_u'
     id = db.Column(db.Integer, primary_key=True)
@@ -24,11 +27,14 @@ class Permission_u(db.Model):
     description_long = db.Column(db.String(200), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
+
 admin_permissions = db.Table(
     'admin_permissions',
     db.Column('admin_id', db.Integer, db.ForeignKey('admins.id'), primary_key=True),
     db.Column('permission_id', db.Integer, db.ForeignKey('permissions_a.id'), primary_key=True)
 )
+
+
 class Admin(db.Model):
     __tablename__ = 'admins'
     id = db.Column(db.Integer, primary_key=True)
@@ -39,12 +45,15 @@ class Admin(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="Admin")
+    isSuperAdmin = db.Column(db.Boolean, nullable=False, default=False)
     permissions = db.relationship('Permission_a', secondary=admin_permissions, back_populates='admins')
+
     def __repr__(self):
         return '<userid %r>' % self.id
 
     def get_permissions(self):
         return [permission.description_short for permission in self.permissions]
+
 
 class Permission_a(db.Model):
     __tablename__ = 'permissions_a'

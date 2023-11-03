@@ -8,30 +8,42 @@ from flask_cors import cross_origin
 
 bcrypt = Bcrypt()
 
+
 @cross_origin()
 def login_admin():
-    jwt_signing_secret = current_app.config.get('JWT_SECRET')  # Access JWT_SECRET from current app's config
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
 
     email = request.json.get('email')
     password = request.json.get('password')
-    permissions = []
 
     user = Admin.query.filter_by(email=email).first()
+
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid credentials'}), 401
-    permissions = [permission.code for permission in user.permissions]
 
-    payload = {
-        'email': user.email,
-        'sub': user.id if user else None,
-        'exp': datetime.utcnow() + timedelta(days=1),
-        'iat': datetime.utcnow(),
-        'roles': 'ADMIN',
-        'permissions': permissions
-    }
+    if user.isSuperAdmin:
+        payload = {
+            'email': user.email,
+            'sub': user.id if user else None,
+            'exp': datetime.utcnow() + timedelta(days=1),
+            'iat': datetime.utcnow(),
+            'roles': 'ADMIN',
+            'isSuperAdmin': True
+        }
+    else:
+        permissions = [permission.code for permission in user.permissions]
+        payload = {
+            'email': user.email,
+            'sub': user.id if user else None,
+            'exp': datetime.utcnow() + timedelta(days=1),
+            'iat': datetime.utcnow(),
+            'roles': 'ADMIN',
+            'permissions': permissions
+        }
 
     token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
     return jsonify({'access_token': token}), 200
+
 
 @cross_origin()
 def register_admin():
@@ -112,6 +124,7 @@ def get_all_perms():
 
 
 def add_perm(adminId, permissionId):
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
     try:
         admin = Admin.query.get(adminId)
         if not admin:
@@ -121,11 +134,38 @@ def add_perm(adminId, permissionId):
         if not permission:
             return jsonify({'message': 'Permission not found'}), 404
 
-        # Sprawdź, czy admin już nie ma tego uprawnienia
         if permission not in admin.permissions:
             admin.permissions.append(permission)
             db.session.commit()
-            return jsonify({'message': 'Permission added to admin successfully'})
+
+            all_permissions = Permission_a.query.all()
+
+            if all(p in admin.permissions for p in all_permissions):
+                admin.isSuperAdmin = True
+                db.session.commit()
+
+            if admin.isSuperAdmin:
+                payload = {
+                    'email': admin.email,
+                    'sub': admin.id,
+                    'exp': datetime.utcnow() + timedelta(days=1),
+                    'iat': datetime.utcnow(),
+                    'roles': 'ADMIN',
+                    'isSuperAdmin': True
+                }
+            else:
+                permissions = [p.code for p in admin.permissions]
+                payload = {
+                    'email': admin.email,
+                    'sub': admin.id,
+                    'exp': datetime.utcnow() + timedelta(days=1),
+                    'iat': datetime.utcnow(),
+                    'roles': 'ADMIN',
+                    'permissions': permissions
+                }
+
+            token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
+            return jsonify({'message': 'Permission added to admin successfully', 'access_token': token}), 200
         else:
             return jsonify({'message': 'Admin already has this permission'}), 400
     except Exception as e:
@@ -144,8 +184,25 @@ def del_perm(adminId, permissionId):
 
         if permission in admin.permissions:
             admin.permissions.remove(permission)
+            all_permissions = Permission_a.query.all()
+            if not all(p in admin.permissions for p in all_permissions):
+                admin.isSuperAdmin = False
+
             db.session.commit()
-            return jsonify({'message': 'Permission removed from admin successfully'})
+
+            jwt_signing_secret = current_app.config.get('JWT_SECRET')
+            permissions = [p.code for p in admin.permissions]
+            payload = {
+                'email': admin.email,
+                'sub': admin.id,
+                'exp': datetime.utcnow() + timedelta(days=1),
+                'iat': datetime.utcnow(),
+                'roles': 'ADMIN',
+                'permissions': permissions
+            }
+            token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
+
+            return jsonify({'message': 'Permission removed from admin successfully', 'access_token': token})
         else:
             return jsonify({'message': 'Admin does not have this permission'}), 400
     except Exception as e:
@@ -168,17 +225,13 @@ def init_perms():
                                  description_long="Akceptowanie ogłoszeń oczekujących w kolejce"),
                     Permission_a(code="ADM003", description_short="Nadawanie uprawnień",
                                  description_long="Nadawanie uprawnień innym administratorom"),
-                    Permission_a(code="ADM004", description_short="Zarządzanie użytkownikami",
-                                 description_long="Zarządzanie użytkownikami na portalu"),
-                    Permission_a(code="ADM005", description_short="Zarządzanie ogłoszeniami",
-                                 description_long="Zarządzanie ogłoszeniami na portalu"),
-                    Permission_a(code="ADM006", description_short="Dodawanie kategorii",
+                    Permission_a(code="ADM004", description_short="Dodawanie kategorii",
                                  description_long="Dodawanie nowych kategorii dla ogłoszeń"),
-                    Permission_a(code="ADM007", description_short="Edycja ogłoszeń",
+                    Permission_a(code="ADM005", description_short="Edycja ogłoszeń",
                                  description_long="Edycja istniejących ogłoszeń na portalu"),
-                    Permission_a(code="ADM008", description_short="Blokowanie użytkowników",
+                    Permission_a(code="ADM006", description_short="Blokowanie użytkowników",
                                  description_long="Blokowanie kont użytkowników"),
-                    Permission_a(code="ADM009", description_short="Edycja kategorii",
+                    Permission_a(code="ADM007", description_short="Edycja kategorii",
                                  description_long="Edycja istniejących kategorii dla ogłoszeń"),
                 ]
                 for permission in permissions:
