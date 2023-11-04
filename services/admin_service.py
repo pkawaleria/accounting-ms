@@ -233,6 +233,8 @@ def init_perms():
                                  description_long="Blokowanie kont użytkowników"),
                     Permission_a(code="ADM007", description_short="Edycja kategorii",
                                  description_long="Edycja istniejących kategorii dla ogłoszeń"),
+                    Permission_a(code="ADM008", description_short="Rejestracja admina",
+                                 description_long="Możliwość utworzenia konta admina"),
                 ]
                 for permission in permissions:
                     db.session.add(permission)
