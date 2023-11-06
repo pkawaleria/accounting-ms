@@ -5,7 +5,10 @@ services:
     image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: password
+      MYSQL_PASSWORD: password
       MYSQL_DATABASE: users
+  ports:
+   - "3308:3306"
 
   web:
     build: .
