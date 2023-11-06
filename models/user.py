@@ -13,6 +13,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="User")
+    isBanned = db.Column(db.Boolean, nullable=False, default=False)
     permissions = db.relationship('Permission_u', backref='user', lazy=True)
 
     def __repr__(self):

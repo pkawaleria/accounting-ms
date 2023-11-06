@@ -1,5 +1,5 @@
 from flask import request, jsonify, current_app
-from models.user import Admin, db, Permission_a
+from models.user import Admin, db, Permission_a, User
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import jwt
@@ -103,7 +103,110 @@ def get_all_admins():
 
     return jsonify(admin_list)
 
+@cross_origin()
+def get_all_users():
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
+    authorization_header = request.headers.get('Authorization')
+    if authorization_header:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
+        role = decoded_token.get('roles')
+        if role == "ADMIN":
+            users = User.query.all()
+            users_list = []
 
+            for user in users:
+                user_data = {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'isBanned': user.isBanned
+                }
+                users_list.append(user_data)
+
+            return jsonify(users_list), 200
+    else:
+        return jsonify({'message': 'Authorization header missing'}), 401
+
+@cross_origin()
+def get_user_by_id(user_id):
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
+    authorization_header = request.headers.get('Authorization')
+
+    if authorization_header:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
+        role = decoded_token.get('roles')
+
+        if role == "ADMIN":
+            user = User.query.get(user_id)
+
+            if user:
+                user_data = {
+                    'id': user.id,
+                    'username': user.username,
+                    'firstname': user.firstname,
+                    'lastname': user.lastname,
+                    'phone_number': user.phone_number,
+                    'email': user.email,
+                    'isBanned': user.isBanned
+                }
+
+                return jsonify(user_data), 200
+            else:
+                return jsonify({'message': 'User not found'}), 404
+        else:
+            return jsonify({'message': 'Unauthorized. Only administrators can access this data.'}), 401
+    else:
+        return jsonify({'message': 'Authorization header missing'}), 401
+
+@cross_origin()
+def block_user(user_id):
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
+    authorization_header = request.headers.get('Authorization')
+
+    if authorization_header:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
+        role = decoded_token.get('roles')
+
+        if role == "ADMIN":
+            user = User.query.get(user_id)
+
+            if user and user.isBanned is False:
+                user.isBanned = True
+                db.session.commit()
+                return jsonify({'message': 'User has been blocked successfully'}), 200
+            else:
+                return jsonify({'message': 'User not found'}), 404
+        else:
+            return jsonify({'message': 'Unauthorized. Only administrators can block users.'}), 401
+    else:
+        return jsonify({'message': 'Authorization header missing'}), 401
+
+@cross_origin()
+def unblock_user(user_id):
+    jwt_signing_secret = current_app.config.get('JWT_SECRET')
+    authorization_header = request.headers.get('Authorization')
+
+    if authorization_header:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
+        role = decoded_token.get('roles')
+
+        if role == "ADMIN":
+            user = User.query.get(user_id)
+
+            if user and user.isBanned is True:
+                user.isBanned = False
+                db.session.commit()
+                return jsonify({'message': 'User has been unblocked successfully'}), 200
+            else:
+                return jsonify({'message': 'User not found'}), 404
+        else:
+            return jsonify({'message': 'Unauthorized. Only administrators can unblock users.'}), 401
+    else:
+        return jsonify({'message': 'Authorization header missing'}), 401
 
 def get_all_perms():
     permissions = Permission_a.query.all()
@@ -342,3 +445,66 @@ def change_password():
                 return jsonify({'message': 'New password not provided'}), 400
         else:
             return jsonify({'message': 'User not found'}), 404
+
+def init_test_users():
+    if Permission_a.query.count() == 0:
+        permissions = [
+            Permission_a(code="ADM001", description_short="Usuwanie ogłoszeń",
+                         description_long="Usuwanie dowolnych ogłoszeń z portalu"),
+            Permission_a(code="ADM002", description_short="Akceptacja ogłoszeń",
+                         description_long="Akceptowanie ogłoszeń oczekujących w kolejce"),
+            Permission_a(code="ADM003", description_short="Nadawanie uprawnień",
+                         description_long="Nadawanie uprawnień innym administratorom"),
+            Permission_a(code="ADM004", description_short="Dodawanie kategorii",
+                         description_long="Dodawanie nowych kategorii dla ogłoszeń"),
+            Permission_a(code="ADM005", description_short="Edycja ogłoszeń",
+                         description_long="Edycja istniejących ogłoszeń na portalu"),
+            Permission_a(code="ADM006", description_short="Blokowanie użytkowników",
+                         description_long="Blokowanie kont użytkowników"),
+            Permission_a(code="ADM007", description_short="Edycja kategorii",
+                         description_long="Edycja istniejących kategorii dla ogłoszeń"),
+            Permission_a(code="ADM008", description_short="Rejestracja admina",
+                         description_long="Możliwość utworzenia konta admina"),
+        ]
+        for permission in permissions:
+            db.session.add(permission)
+
+        db.session.commit()
+    try:
+        # Tworzenie testowych użytkowników
+        user1 = User(username='testuser1', firstname='John', lastname='Doe', phone_number='123456789',
+                     email='user1@example.com')
+        user1.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+        user2 = User(username='testuser2', firstname='Jane', lastname='Smith', phone_number='987654321',
+                     email='user2@example.com')
+        user2.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        # Tworzenie testowych administratorów
+        admin1 = Admin(username='admin1', firstname='Admin', lastname='One', phone_number='111111111',
+                       email='admin@admin.com')
+        admin1.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+        admin2 = Admin(username='admin2', firstname='Admin', lastname='Two', phone_number='222222222',
+                       email='admin2@admin2.com')
+        admin2.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        # Pobieranie wszystkich uprawnień
+        all_permissions = Permission_a.query.all()
+
+        # Przypisywanie wszystkich uprawnień do pierwszego administratora
+        for permission in all_permissions:
+            admin1.permissions.append(permission)
+
+        # Ustawianie flagi isSuperAdmin na True dla pierwszego administratora
+        admin1.isSuperAdmin = True
+
+        # Dodawanie użytkowników i administratorów do bazy danych
+        db.session.add(user1)
+        db.session.add(user2)
+        db.session.add(admin1)
+        db.session.add(admin2)
+        db.session.commit()
+
+        return jsonify({'message': 'Test users and admins initialized successfully'}), 201
+
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while initializing test users and admins'}), 500

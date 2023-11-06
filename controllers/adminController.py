@@ -1,5 +1,5 @@
 from services.admin_service import login_admin, register_admin, get_admin_perms, get_all_perms, add_perm, del_perm, init_perms, acc, acc_short, \
-    change_password, get_all_admins
+    change_password, get_all_admins, init_test_users, get_all_users, get_user_by_id, block_user, unblock_user
 
 
 def index():
@@ -38,3 +38,17 @@ def change_passwd():
 
 def get_admins():
     return get_all_admins()
+
+def test_users():
+    return init_test_users()
+
+def get_users():
+    return get_all_users()
+def get_single_user(id):
+    return get_user_by_id(id)
+
+def block_u(id):
+    return block_user(id)
+
+def unblock_u(id):
+    return unblock_user(id)
