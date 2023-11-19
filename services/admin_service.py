@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import jwt
 from services.utils import is_valid_password, is_valid_phone_number
 from flask_cors import cross_origin
+from flask_mail import Message, Mail
 
 bcrypt = Bcrypt()
-
 
 @cross_origin()
 def login_admin():
@@ -398,13 +398,25 @@ def acc():
 
         db.session.commit()
 
-        token_data = {
-            'email': email,
-            'sub': admin.id,
-            'iat': datetime.utcnow(),
-            'roles': 'ADMIN',
-            'exp': datetime.utcnow() + timedelta(minutes=60 * 24 * 30)
-        }
+        if admin.isSuperAdmin:
+            token_data = {
+                'email': admin.email,
+                'sub': admin.id,
+                'exp': datetime.utcnow() + timedelta(days=1),
+                'iat': datetime.utcnow(),
+                'roles': 'ADMIN',
+                'isSuperAdmin': True
+            }
+        else:
+            permissions = [p.code for p in admin.permissions]
+            token_data = {
+                'email': admin.email,
+                'sub': admin.id,
+                'exp': datetime.utcnow() + timedelta(days=1),
+                'iat': datetime.utcnow(),
+                'roles': 'ADMIN',
+                'permissions': permissions
+            }
 
         token = jwt.encode(token_data, jwt_signing_secret, algorithm='HS256')
         return jsonify({'access_token': token}), 200
@@ -508,3 +520,38 @@ def init_test_users():
 
     except Exception as e:
         return jsonify({'message': 'An error occurred while initializing test users and admins'}), 500
+
+
+def send_email():
+    # authorization_header = request.headers.get('Authorization')
+    #
+    # if not authorization_header:
+    #     return jsonify({'message': 'Authorization header missing'}), 401
+
+    try:
+        # token = authorization_header.split(' ')[1]
+        # decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
+        #
+        # if decoded_token.get('roles') != "ADMIN":
+        #     return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
+
+        data = request.get_json()
+        user_email = data.get('email')
+        subject_body = data.get('subject')
+        message_body = data.get('message')
+
+        if not user_email or not message_body:
+            return jsonify({'message': 'Email and message are required'}), 400
+        sender = current_app.config.get('MAIL_USERNAME')
+        msg = Message(subject=subject_body, sender=sender, recipients=[user_email])
+        msg.body = message_body
+        mail = Mail(current_app)
+        mail.send(msg)
+
+
+        return jsonify({'message': 'Email sent successfully'}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
