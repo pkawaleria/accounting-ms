@@ -523,17 +523,17 @@ def init_test_users():
 
 
 def send_email():
-    # authorization_header = request.headers.get('Authorization')
-    #
-    # if not authorization_header:
-    #     return jsonify({'message': 'Authorization header missing'}), 401
+    authorization_header = request.headers.get('Authorization')
+
+    if not authorization_header:
+        return jsonify({'message': 'Authorization header missing'}), 401
 
     try:
-        # token = authorization_header.split(' ')[1]
-        # decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
-        #
-        # if decoded_token.get('roles') != "ADMIN":
-        #     return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
+
+        if decoded_token.get('roles') != "ADMIN":
+            return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
 
         data = request.get_json()
         user_email = data.get('email')
@@ -547,7 +547,6 @@ def send_email():
         msg.body = message_body
         mail = Mail(current_app)
         mail.send(msg)
-
 
         return jsonify({'message': 'Email sent successfully'}), 200
 
