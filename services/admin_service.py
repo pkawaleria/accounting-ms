@@ -536,13 +536,15 @@ def send_email():
             return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
 
         data = request.get_json()
-        user_email = data.get('email')
+        user_id = data.get('id')
         subject_body = data.get('subject')
         message_body = data.get('message')
 
-        if not user_email or not message_body:
-            return jsonify({'message': 'Email and message are required'}), 400
+        if not user_id or not message_body:
+            return jsonify({'message': 'Id and message are required'}), 400
         sender = current_app.config.get('MAIL_USERNAME')
+        user = User.query.filter_by(id=user_id).first()
+        user_email = user.email
         msg = Message(subject=subject_body, sender=sender, recipients=[user_email])
         msg.body = message_body
         mail = Mail(current_app)

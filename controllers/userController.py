@@ -1,4 +1,4 @@
-from services.user_service import login_user, register_user, delete_user as del_user, change_password, acc, acc_short
+from services.user_service import login_user, register_user, delete_user as del_user, change_password, acc, acc_short, mail_to_user
 
 def index():
     return {'status': 'OK'}
@@ -19,3 +19,7 @@ def account():
 
 def account_short(id):
     return acc_short(id)
+
+
+def send_mail_to_user():
+    return mail_to_user()

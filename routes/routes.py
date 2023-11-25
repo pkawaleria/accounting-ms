@@ -1,5 +1,5 @@
 from flask import Blueprint
-from controllers.userController import index, login, register, delete_user, change_passwd, account, account_short
+from controllers.userController import index, login, register, delete_user, change_passwd, account, account_short, send_mail_to_user
 from controllers.adminController import login as login_a, register as register_a, get_admin_permissions, \
     get_all_permisions, add_permission, delete_permission, initialize_permissions, account as account_a, \
     acc_short as acc_short_a, change_passwd as change_passwd_a, get_admins, test_users, get_users, get_single_user, \
@@ -15,6 +15,7 @@ user.route('/<string:userId>/delete', methods=['DELETE'])(delete_user)
 user.route('/changepasswd', methods=['POST'])(change_passwd)
 user.route('/account_info', methods=['POST', 'GET'])(account)
 user.route('/account_info_short/<string:id>', methods=['GET'])(account_short)
+user.route('/send_mail', methods=['POST'])(send_mail_to_user)
 
 admin.route('/login', methods=['POST'])(login_a)
 admin.route('/register', methods=['POST'])(register_a)

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import jwt
 from services.utils import is_valid_password, is_valid_phone_number
 from flask_cors import cross_origin
+from flask_mail import Message, Mail
 
 bcrypt = Bcrypt()
 @cross_origin()
@@ -175,3 +176,39 @@ def acc_short(id):
             'email': user.email,
             'phone_number': user.phone_number
         })
+
+
+def mail_to_user():
+    authorization_header = request.headers.get('Authorization')
+
+    if not authorization_header:
+        return jsonify({'message': 'Authorization header missing'}), 401
+
+    try:
+        token = authorization_header.split(' ')[1]
+        decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
+
+        if decoded_token.get('roles') != "USER":
+            return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
+
+        data = request.get_json()
+        user_id = data.get('id')
+        subject_body = data.get('subject')
+        message_body = data.get('message')
+
+        if not user_id or not message_body:
+            return jsonify({'message': 'Id and message are required'}), 400
+        sender = current_app.config.get('MAIL_USERNAME')
+        user = User.query.filter_by(id=user_id).first()
+        user_email = user.email
+        msg = Message(subject=subject_body, sender=sender, recipients=[user_email])
+        msg.body = message_body
+        mail = Mail(current_app)
+        mail.send(msg)
+
+        return jsonify({'message': 'Email sent successfully'}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
