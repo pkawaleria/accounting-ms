@@ -461,22 +461,22 @@ def change_password():
 def init_test_users():
     if Permission_a.query.count() == 0:
         permissions = [
-            Permission_a(code="ADM001", description_short="Usuwanie ogloszen",
-                         description_long="Usuwanie dowolnych ogloszen z portalu"),
-            Permission_a(code="ADM002", description_short="Akceptacja ogloszen",
-                         description_long="Akceptowanie ogloszen oczekujacych w kolejce"),
-            Permission_a(code="ADM003", description_short="Nadawanie uprawnien",
-                         description_long="Nadawanie uprawnien innym administratorom"),
+            Permission_a(code="ADM001", description_short="Usuwanie ogłoszeń",
+                         description_long="Usuwanie dowolnych ogłoszeń z portalu"),
+            Permission_a(code="ADM002", description_short="Akceptacja ogłoszeń",
+                         description_long="Akceptowanie ogłoszeń oczekujących w kolejce"),
+            Permission_a(code="ADM003", description_short="Nadawanie uprawnień",
+                         description_long="Nadawanie uprawnień innym administratorom"),
             Permission_a(code="ADM004", description_short="Dodawanie kategorii",
-                         description_long="Dodawanie nowych kategorii dla ogloszen"),
-            Permission_a(code="ADM005", description_short="Edycja ogloszen",
-                         description_long="Edycja istniejacych ogloszen na portalu"),
-            Permission_a(code="ADM006", description_short="Blokowanie uzytkownikow",
-                         description_long="Blokowanie kont uzytkownikow"),
+                         description_long="Dodawanie nowych kategorii dla ogłoszeń"),
+            Permission_a(code="ADM005", description_short="Edycja ogłoszeń",
+                         description_long="Edycja istniejących ogłoszeń na portalu"),
+            Permission_a(code="ADM006", description_short="Blokowanie użytkowników",
+                         description_long="Blokowanie kont użytkowników"),
             Permission_a(code="ADM007", description_short="Edycja kategorii",
-                         description_long="Edycja istniejacych kategorii dla ogloszen"),
+                         description_long="Edycja istniejących kategorii dla ogłoszeń"),
             Permission_a(code="ADM008", description_short="Rejestracja admina",
-                         description_long="Mozliwosc utworzenia konta admina"),
+                         description_long="Możliwość utworzenia konta admina"),
         ]
         for permission in permissions:
             db.session.add(permission)
