@@ -1,5 +1,5 @@
 from services.admin_service import login_admin, register_admin, get_admin_perms, get_all_perms, add_perm, del_perm, init_perms, acc, acc_short, \
-    change_password, get_all_admins, init_test_users, get_all_users, get_user_by_id, block_user, unblock_user
+    change_password, get_all_admins, init_test_users, get_all_users, get_user_by_id, block_user, unblock_user, send_email
 
 
 def index():
@@ -52,3 +52,5 @@ def block_u(id):
 
 def unblock_u(id):
     return unblock_user(id)
+def send_mail():
+    return send_email()

@@ -4,6 +4,7 @@ from routes.routes import user,admin
 from models.user import db
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from flask_mail import Mail
 
 bcrypt = Bcrypt()
 
@@ -13,6 +14,8 @@ def create_app():
     app.config.from_object('config')
     bcrypt.init_app(app)
     db.init_app(app)
+    mail = Mail(app)
+    mail.init_app(app)
     return app
 
 app = create_app()
