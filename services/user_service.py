@@ -188,7 +188,7 @@ def mail_to_user():
         token = authorization_header.split(' ')[1]
         decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
 
-        if decoded_token.get('roles') != "USER":
+        if decoded_token.get('roles') != "USER" or decoded_token.get('roles') != "ADMIN":
             return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
 
         data = request.get_json()
