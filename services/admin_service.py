@@ -7,6 +7,8 @@ from services.utils import is_valid_password, is_valid_phone_number
 from flask_cors import cross_origin
 from flask_mail import Message, Mail
 
+from utils.admin_error_codes import ERROR_DICT
+
 bcrypt = Bcrypt()
 
 @cross_origin()
@@ -55,28 +57,28 @@ def register_admin():
     phone_number = request.json.get('phone_number')
     confirm_password = request.json.get('confirmPassword')
     if password != confirm_password:
-        return {'message': 'Passwords do not match'}
+        return {'code': 'ACC02', 'message': ERROR_DICT['ACC02']}
 
     if not is_valid_password(password):
-        return {'message': 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit'}, 400
+        return {'code': 'ACC03', 'message': ERROR_DICT['ACC03']}, 400
 
     if not is_valid_phone_number(phone_number):
-        return {'message': 'Phone number must be exactly 9 digits'}, 400
+        return {'code': 'ACC04', 'message': ERROR_DICT['ACC04']}, 400
 
     user = Admin.query.filter_by(email=email).first()
     if user:
-        return {'message': 'Username or email already exists'}
+        return {'code': 'ACC05', 'message': ERROR_DICT['ACC05']}
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = Admin(username=username,firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
+    new_user = Admin(username=username, firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
                      password=hashed_password)
 
     try:
         db.session.add(new_user)
         db.session.commit()
-        return {'message': 'User registered successfully'}
+        return {'message': 'Admin registered successfully'}, 200
     except Exception as e:
-        return {'message': 'An error occurred while registering user'}
+        return {'code': 'ACC06', 'message': ERROR_DICT['ACC06']}
 
 @cross_origin()
 def get_admin_perms(adminId):
@@ -86,7 +88,7 @@ def get_admin_perms(adminId):
         permissions = [{'id': permission.id, 'code': permission.code, 'description_short': permission.description_short} for permission in admin.permissions]
         return jsonify({'permissions': permissions})
     else:
-        return jsonify({'message': 'Admin not found'}), 404
+        return {'code': 'ACC07', 'message': ERROR_DICT['ACC07']}, 404
 
 @cross_origin()
 def get_all_admins():
@@ -126,7 +128,7 @@ def get_all_users():
 
             return jsonify(users_list), 200
     else:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
 @cross_origin()
 def get_user_by_id(user_id):
@@ -154,11 +156,11 @@ def get_user_by_id(user_id):
 
                 return jsonify(user_data), 200
             else:
-                return jsonify({'message': 'User not found'}), 404
+                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 401
         else:
-            return jsonify({'message': 'Unauthorized. Only administrators can access this data.'}), 401
+            return {'code': 'ACC10', 'message': ERROR_DICT['ACC10']}, 401
     else:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
 @cross_origin()
 def block_user(user_id):
@@ -178,11 +180,11 @@ def block_user(user_id):
                 db.session.commit()
                 return jsonify({'message': 'User has been blocked successfully'}), 200
             else:
-                return jsonify({'message': 'User not found'}), 404
+                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
         else:
-            return jsonify({'message': 'Unauthorized. Only administrators can block users.'}), 401
+            return {'code': 'ACC11', 'message': ERROR_DICT['ACC11']}, 401
     else:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
 @cross_origin()
 def unblock_user(user_id):
@@ -202,11 +204,11 @@ def unblock_user(user_id):
                 db.session.commit()
                 return jsonify({'message': 'User has been unblocked successfully'}), 200
             else:
-                return jsonify({'message': 'User not found'}), 404
+                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
         else:
-            return jsonify({'message': 'Unauthorized. Only administrators can unblock users.'}), 401
+            return {'code': 'ACC12', 'message': ERROR_DICT['ACC13']}, 404
     else:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
 def get_all_perms():
     permissions = Permission_a.query.all()
@@ -235,7 +237,7 @@ def add_perm(adminId, permissionId):
 
         permission = Permission_a.query.get(permissionId)
         if not permission:
-            return jsonify({'message': 'Permission not found'}), 404
+            return {'code': 'ACC13', 'message': ERROR_DICT['ACC13']}, 404
 
         if permission not in admin.permissions:
             admin.permissions.append(permission)
@@ -270,20 +272,20 @@ def add_perm(adminId, permissionId):
             token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
             return jsonify({'message': 'Permission added to admin successfully', 'access_token': token}), 200
         else:
-            return jsonify({'message': 'Admin already has this permission'}), 400
+            return {'code': 'ACC14', 'message': ERROR_DICT['ACC14']}, 409
     except Exception as e:
-        return jsonify({'message': 'An error occurred while adding permission'}), 500
+        return {'code': 'ACC15', 'message': ERROR_DICT['ACC15']}, 500
 
 
 def del_perm(adminId, permissionId):
     try:
         admin = Admin.query.get(adminId)
         if not admin:
-            return jsonify({'message': 'Admin not found'}), 404
+            return {'code': 'ACC07', 'message': ERROR_DICT['ACC07']}, 404
 
         permission = Permission_a.query.get(permissionId)
         if not permission:
-            return jsonify({'message': 'Permission not found'}), 404
+            return {'code': 'ACC12', 'message': ERROR_DICT['ACC13']}, 404
 
         if permission in admin.permissions:
             admin.permissions.remove(permission)
@@ -307,9 +309,9 @@ def del_perm(adminId, permissionId):
 
             return jsonify({'message': 'Permission removed from admin successfully', 'access_token': token})
         else:
-            return jsonify({'message': 'Admin does not have this permission'}), 400
+            return jsonify({'code': 'ACC16', 'message': ERROR_DICT['ACC16']}), 400
     except Exception as e:
-        return jsonify({'message': 'An error occurred while removing permission'}), 500
+        return jsonify({'code': 'ACC17', 'message': ERROR_DICT['ACC17']}), 500
 
 
 def init_perms():
@@ -345,7 +347,7 @@ def init_perms():
                 db.session.commit()
                 return jsonify({'message': 'Permissions initialized successfuly'}), 201
             else:
-                return jsonify({'message': 'Permissions_a is not empty'}), 500
+                return jsonify({'code': 'ACC19', 'message': ERROR_DICT['ACC19']}), 400
     else:
         return jsonify({'message': 'Authorization header missing'}), 401
 
@@ -384,11 +386,11 @@ def acc():
         existing_user_with_phone = Admin.query.filter_by(phone_number=new_phone_number).first()
 
         if existing_user_with_username and existing_user_with_username.id != admin.id:
-            return jsonify({'message': 'User with the same username already exists'}), 400
+            return jsonify({'code': 'ACC20', 'message': ERROR_DICT['ACC20']}), 400
         if existing_user_with_email and existing_user_with_email.id != admin.id:
-            return jsonify({'message': 'User with the same email already exists'}), 400
+            return jsonify({'code': 'ACC21', 'message': ERROR_DICT['ACC21']}), 400
         if existing_user_with_phone and existing_user_with_phone.id != admin.id:
-            return jsonify({'message': 'User with the same phone number already exists'}), 400
+            return jsonify({'code': 'ACC22', 'message': ERROR_DICT['ACC22']}), 400
 
         admin.username = new_username
         admin.email = new_email
@@ -443,20 +445,20 @@ def change_password():
         decoded_token = jwt.decode(token, jwt_signing_secret, algorithms=['HS256'])
         email = decoded_token.get('email')
     else:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
     current_user_email = email
-    user = Admin.query.filter_by(email=current_user_email).first()
+    admin = Admin.query.filter_by(email=current_user_email).first()
     if request.method == 'POST':
-        if user:
+        if admin:
             new_password = request.json.get('new_password')
             if new_password:
-                user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                admin.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
                 db.session.commit()
                 return jsonify({'message': 'Password changed successfully'}), 200
             else:
-                return jsonify({'message': 'New password not provided'}), 400
+                return jsonify({'code': 'ACC23', 'message': ERROR_DICT['ACC23']}), 400
         else:
-            return jsonify({'message': 'User not found'}), 404
+            return jsonify({'code': 'ACC07', 'message': ERROR_DICT['ACC07']}), 404
 
 def init_test_users():
     if Permission_a.query.count() == 0:
@@ -519,21 +521,21 @@ def init_test_users():
         return jsonify({'message': 'Test users and admins initialized successfully'}), 201
 
     except Exception as e:
-        return jsonify({'message': 'An error occurred while initializing test users and admins'}), 500
+        return jsonify({'code': 'ACC24', 'message': ERROR_DICT['ACC24']}), 500
 
 
 def send_email():
     authorization_header = request.headers.get('Authorization')
 
     if not authorization_header:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
     try:
         token = authorization_header.split(' ')[1]
         decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
 
         if decoded_token.get('roles') != "ADMIN":
-            return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
+            return jsonify({'code': 'ACC25', 'message': ERROR_DICT['ACC25']}), 400
 
         data = request.get_json()
         user_id = data.get('id')
@@ -541,7 +543,7 @@ def send_email():
         message_body = data.get('message')
 
         if not user_id or not message_body:
-            return jsonify({'message': 'Id and message are required'}), 400
+            return jsonify({'code': 'ACC26', 'message': ERROR_DICT['ACC26']}), 400
         sender = current_app.config.get('MAIL_USERNAME')
         user = User.query.filter_by(id=user_id).first()
         user_email = user.email
@@ -553,6 +555,6 @@ def send_email():
         return jsonify({'message': 'Email sent successfully'}), 200
 
     except jwt.ExpiredSignatureError:
-        return jsonify({'message': 'Token has expired'}), 401
+        return jsonify({'code': 'ACC27', 'message': ERROR_DICT['ACC27']}), 401
     except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token'}), 401
+        return jsonify({'code': 'ACC28', 'message': ERROR_DICT['ACC28']}), 401
