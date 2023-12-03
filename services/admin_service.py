@@ -21,7 +21,7 @@ def login_admin():
     user = Admin.query.filter_by(email=email).first()
 
     if not user or not bcrypt.check_password_hash(user.password, password):
-        return jsonify({'message': 'Invalid credentials'}), 401
+        return {'code': 'ACC02', 'message': ERROR_DICT['ACC02']}, 401
 
     if user.isSuperAdmin:
         payload = {
@@ -156,9 +156,9 @@ def get_user_by_id(user_id):
 
                 return jsonify(user_data), 200
             else:
-                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 401
+                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
         else:
-            return {'code': 'ACC10', 'message': ERROR_DICT['ACC10']}, 401
+            return {'code': 'ACC10', 'message': ERROR_DICT['ACC10']}, 403
     else:
         return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
@@ -182,7 +182,7 @@ def block_user(user_id):
             else:
                 return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
         else:
-            return {'code': 'ACC11', 'message': ERROR_DICT['ACC11']}, 401
+            return {'code': 'ACC11', 'message': ERROR_DICT['ACC11']}, 403
     else:
         return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
@@ -206,7 +206,7 @@ def unblock_user(user_id):
             else:
                 return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
         else:
-            return {'code': 'ACC12', 'message': ERROR_DICT['ACC13']}, 404
+            return {'code': 'ACC12', 'message': ERROR_DICT['ACC13']}, 403
     else:
         return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
 
@@ -233,7 +233,7 @@ def add_perm(adminId, permissionId):
     try:
         admin = Admin.query.get(adminId)
         if not admin:
-            return jsonify({'message': 'Admin not found'}), 404
+            return {'code': 'ACC07', 'message': ERROR_DICT['ACC07']}, 404
 
         permission = Permission_a.query.get(permissionId)
         if not permission:
@@ -386,11 +386,11 @@ def acc():
         existing_user_with_phone = Admin.query.filter_by(phone_number=new_phone_number).first()
 
         if existing_user_with_username and existing_user_with_username.id != admin.id:
-            return jsonify({'code': 'ACC20', 'message': ERROR_DICT['ACC20']}), 400
+            return jsonify({'code': 'ACC20', 'message': ERROR_DICT['ACC20']}), 409
         if existing_user_with_email and existing_user_with_email.id != admin.id:
-            return jsonify({'code': 'ACC21', 'message': ERROR_DICT['ACC21']}), 400
+            return jsonify({'code': 'ACC21', 'message': ERROR_DICT['ACC21']}), 409
         if existing_user_with_phone and existing_user_with_phone.id != admin.id:
-            return jsonify({'code': 'ACC22', 'message': ERROR_DICT['ACC22']}), 400
+            return jsonify({'code': 'ACC22', 'message': ERROR_DICT['ACC22']}), 409
 
         admin.username = new_username
         admin.email = new_email
@@ -535,7 +535,7 @@ def send_email():
         decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
 
         if decoded_token.get('roles') != "ADMIN":
-            return jsonify({'code': 'ACC25', 'message': ERROR_DICT['ACC25']}), 400
+            return jsonify({'code': 'ACC25', 'message': ERROR_DICT['ACC25']}), 403
 
         data = request.get_json()
         user_id = data.get('id')
