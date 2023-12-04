@@ -1,15 +1,17 @@
-from flask import request, jsonify, current_app
-from models.user import Admin, db, Permission_a, User
-from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
+
 import jwt
-from services.utils import is_valid_password, is_valid_phone_number
+from flask import request, jsonify, current_app
+from flask_bcrypt import Bcrypt
 from flask_cors import cross_origin
 from flask_mail import Message, Mail
 
+from models.user import Admin, db, Permission_a, User
+from services.utils import is_valid_password, is_valid_phone_number
 from utils.admin_error_codes import ERROR_DICT
 
 bcrypt = Bcrypt()
+
 
 @cross_origin()
 def login_admin():
@@ -21,7 +23,7 @@ def login_admin():
     user = Admin.query.filter_by(email=email).first()
 
     if not user or not bcrypt.check_password_hash(user.password, password):
-        return {'code': 'ACC02', 'message': ERROR_DICT['ACC02']}, 401
+        return jsonify({'code': 'ACC02', 'message': ERROR_DICT['ACC02']}), 401
 
     if user.isSuperAdmin:
         payload = {
@@ -57,17 +59,17 @@ def register_admin():
     phone_number = request.json.get('phone_number')
     confirm_password = request.json.get('confirmPassword')
     if password != confirm_password:
-        return {'code': 'ACC02', 'message': ERROR_DICT['ACC02']}
+        return jsonify({'code': 'ACC02', 'message': ERROR_DICT['ACC02']})
 
     if not is_valid_password(password):
-        return {'code': 'ACC03', 'message': ERROR_DICT['ACC03']}, 400
+        return jsonify({'code': 'ACC03', 'message': ERROR_DICT['ACC03']}), 400
 
     if not is_valid_phone_number(phone_number):
-        return {'code': 'ACC04', 'message': ERROR_DICT['ACC04']}, 400
+        return jsonify({'code': 'ACC04', 'message': ERROR_DICT['ACC04']}), 400
 
     user = Admin.query.filter_by(email=email).first()
     if user:
-        return {'code': 'ACC05', 'message': ERROR_DICT['ACC05']}
+        return jsonify({'code': 'ACC05', 'message': ERROR_DICT['ACC05']})
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     new_user = Admin(username=username, firstname=firstname, lastname=lastname, phone_number=phone_number, email=email,
@@ -78,7 +80,8 @@ def register_admin():
         db.session.commit()
         return {'message': 'Admin registered successfully'}, 200
     except Exception as e:
-        return {'code': 'ACC06', 'message': ERROR_DICT['ACC06']}
+        return jsonify({'code': 'ACC06', 'message': ERROR_DICT['ACC06']})
+
 
 @cross_origin()
 def get_admin_perms(adminId):
@@ -88,7 +91,8 @@ def get_admin_perms(adminId):
         permissions = [{'id': permission.id, 'code': permission.code, 'description_short': permission.description_short} for permission in admin.permissions]
         return jsonify({'permissions': permissions})
     else:
-        return {'code': 'ACC07', 'message': ERROR_DICT['ACC07']}, 404
+        return jsonify({'code': 'ACC07', 'message': ERROR_DICT['ACC07']}), 404
+
 
 @cross_origin()
 def get_all_admins():
@@ -104,6 +108,7 @@ def get_all_admins():
         admin_list.append(admin_data)
 
     return jsonify(admin_list)
+
 
 @cross_origin()
 def get_all_users():
@@ -128,7 +133,8 @@ def get_all_users():
 
             return jsonify(users_list), 200
     else:
-        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
+
 
 @cross_origin()
 def get_user_by_id(user_id):
@@ -156,11 +162,12 @@ def get_user_by_id(user_id):
 
                 return jsonify(user_data), 200
             else:
-                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
+                return jsonify({'code': 'ACC09', 'message': ERROR_DICT['ACC09']}), 404
         else:
-            return {'code': 'ACC10', 'message': ERROR_DICT['ACC10']}, 403
+            return jsonify({'code': 'ACC10', 'message': ERROR_DICT['ACC10']}), 403
     else:
-        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
+
 
 @cross_origin()
 def block_user(user_id):
@@ -180,11 +187,12 @@ def block_user(user_id):
                 db.session.commit()
                 return jsonify({'message': 'User has been blocked successfully'}), 200
             else:
-                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
+                return jsonify({'code': 'ACC09', 'message': ERROR_DICT['ACC09']}), 404
         else:
-            return {'code': 'ACC11', 'message': ERROR_DICT['ACC11']}, 403
+            return jsonify({'code': 'ACC11', 'message': ERROR_DICT['ACC11']}), 403
     else:
-        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
+
 
 @cross_origin()
 def unblock_user(user_id):
@@ -204,11 +212,11 @@ def unblock_user(user_id):
                 db.session.commit()
                 return jsonify({'message': 'User has been unblocked successfully'}), 200
             else:
-                return {'code': 'ACC09', 'message': ERROR_DICT['ACC09']}, 404
+                return jsonify({'code': 'ACC09', 'message': ERROR_DICT['ACC09']}), 404
         else:
-            return {'code': 'ACC12', 'message': ERROR_DICT['ACC13']}, 403
+            return jsonify({'code': 'ACC12', 'message': ERROR_DICT['ACC13']}), 403
     else:
-        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
 
 def get_all_perms():
     permissions = Permission_a.query.all()
@@ -233,11 +241,11 @@ def add_perm(adminId, permissionId):
     try:
         admin = Admin.query.get(adminId)
         if not admin:
-            return {'code': 'ACC07', 'message': ERROR_DICT['ACC07']}, 404
+            return jsonify({'code': 'ACC07', 'message': ERROR_DICT['ACC07']}), 404
 
         permission = Permission_a.query.get(permissionId)
         if not permission:
-            return {'code': 'ACC13', 'message': ERROR_DICT['ACC13']}, 404
+            return jsonify({'code': 'ACC13', 'message': ERROR_DICT['ACC13']}), 404
 
         if permission not in admin.permissions:
             admin.permissions.append(permission)
@@ -272,20 +280,20 @@ def add_perm(adminId, permissionId):
             token = jwt.encode(payload, jwt_signing_secret, algorithm='HS256')
             return jsonify({'message': 'Permission added to admin successfully', 'access_token': token}), 200
         else:
-            return {'code': 'ACC14', 'message': ERROR_DICT['ACC14']}, 409
+            return jsonify({'code': 'ACC14', 'message': ERROR_DICT['ACC14']}), 409
     except Exception as e:
-        return {'code': 'ACC15', 'message': ERROR_DICT['ACC15']}, 500
+        return jsonify({'code': 'ACC15', 'message': ERROR_DICT['ACC15']}), 500
 
 
 def del_perm(adminId, permissionId):
     try:
         admin = Admin.query.get(adminId)
         if not admin:
-            return {'code': 'ACC07', 'message': ERROR_DICT['ACC07']}, 404
+            return jsonify({'code': 'ACC07', 'message': ERROR_DICT['ACC07']}), 404
 
         permission = Permission_a.query.get(permissionId)
         if not permission:
-            return {'code': 'ACC12', 'message': ERROR_DICT['ACC13']}, 404
+            return jsonify({'code': 'ACC12', 'message': ERROR_DICT['ACC13']}), 404
 
         if permission in admin.permissions:
             admin.permissions.remove(permission)
@@ -349,7 +357,7 @@ def init_perms():
             else:
                 return jsonify({'code': 'ACC19', 'message': ERROR_DICT['ACC19']}), 400
     else:
-        return jsonify({'message': 'Authorization header missing'}), 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
 
 
 @cross_origin()
@@ -528,7 +536,7 @@ def send_email():
     authorization_header = request.headers.get('Authorization')
 
     if not authorization_header:
-        return {'code': 'ACC08', 'message': ERROR_DICT['ACC08']}, 401
+        return jsonify({'code': 'ACC08', 'message': ERROR_DICT['ACC08']}), 401
 
     try:
         token = authorization_header.split(' ')[1]
