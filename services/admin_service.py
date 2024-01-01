@@ -501,6 +501,38 @@ def init_test_users():
                      email='user2@example.com')
         user2.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
 
+        user3 = User(username='testuser3', firstname='User3', lastname='User3', phone_number='234567890',
+                     email='user3@example.com')
+        user3.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user4 = User(username='testuser4', firstname='User4', lastname='User4', phone_number='345678901',
+                     email='user4@example.com')
+        user4.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user5 = User(username='testuser5', firstname='User5', lastname='User5', phone_number='456789012',
+                     email='user5@example.com')
+        user5.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user6 = User(username='testuser6', firstname='User6', lastname='User6', phone_number='567890123',
+                     email='user6@example.com')
+        user6.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user7 = User(username='testuser7', firstname='User7', lastname='User7', phone_number='678901234',
+                     email='user7@example.com')
+        user7.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user8 = User(username='testuser8', firstname='User8', lastname='User8', phone_number='789012345',
+                     email='user8@example.com')
+        user8.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user9 = User(username='testuser9', firstname='User9', lastname='User9', phone_number='890123456',
+                     email='user9@example.com')
+        user9.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
+        user10 = User(username='testuser10', firstname='User10', lastname='User10', phone_number='111222333',
+                     email='user10@example.com')
+        user10.password = bcrypt.generate_password_hash('Haslo123').decode('utf-8')
+
         # Tworzenie testowych administratorów
         admin1 = Admin(username='admin1', firstname='Admin', lastname='One', phone_number='111111111',
                        email='admin@admin.com')
@@ -522,6 +554,14 @@ def init_test_users():
         # Dodawanie użytkowników i administratorów do bazy danych
         db.session.add(user1)
         db.session.add(user2)
+        db.session.add(user3)
+        db.session.add(user4)
+        db.session.add(user5)
+        db.session.add(user6)
+        db.session.add(user7)
+        db.session.add(user8)
+        db.session.add(user9)
+        db.session.add(user10)
         db.session.add(admin1)
         db.session.add(admin2)
         db.session.commit()
