@@ -188,25 +188,43 @@ def mail_to_user():
         token = authorization_header.split(' ')[1]
         decoded_token = jwt.decode(token, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
 
-        if decoded_token.get('roles') != "USER" or decoded_token.get('roles') != "ADMIN":
-            return jsonify({'message': 'Unauthorized. Only administrators can access this endpoint'}), 403
+        if decoded_token.get('roles') == "USER":
+            data = request.get_json()
+            user_id = data.get('id')
+            subject_body = data.get('subject')
+            message_body = data.get('message')
 
-        data = request.get_json()
-        user_id = data.get('id')
-        subject_body = data.get('subject')
-        message_body = data.get('message')
+            if not user_id or not message_body:
+                return jsonify({'message': 'Id and message are required'}), 400
+            sender = current_app.config.get('MAIL_USERNAME')
+            user = User.query.filter_by(id=user_id).first()
+            user_email = user.email
+            msg = Message(subject=subject_body, sender=sender, recipients=[user_email])
+            msg.body = message_body
+            mail = Mail(current_app)
+            mail.send(msg)
 
-        if not user_id or not message_body:
-            return jsonify({'message': 'Id and message are required'}), 400
-        sender = current_app.config.get('MAIL_USERNAME')
-        user = User.query.filter_by(id=user_id).first()
-        user_email = user.email
-        msg = Message(subject=subject_body, sender=sender, recipients=[user_email])
-        msg.body = message_body
-        mail = Mail(current_app)
-        mail.send(msg)
+            return jsonify({'message': 'Email sent successfully'}), 200
 
-        return jsonify({'message': 'Email sent successfully'}), 200
+        elif decoded_token.get('roles') == "ADMIN":
+            data = request.get_json()
+            user_id = data.get('id')
+            subject_body = data.get('subject')
+            message_body = data.get('message')
+
+            if not user_id or not message_body:
+                return jsonify({'message': 'Id and message are required'}), 400
+            sender = current_app.config.get('MAIL_USERNAME')
+            user = User.query.filter_by(id=user_id).first()
+            user_email = user.email
+            msg = Message(subject=subject_body, sender=sender, recipients=[user_email])
+            msg.body = message_body
+            mail = Mail(current_app)
+            mail.send(msg)
+
+            return jsonify({'message': 'Email sent successfully'}), 200
+        else:
+            return jsonify({'message': 'Unauthorized'}), 403
 
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token has expired'}), 401
